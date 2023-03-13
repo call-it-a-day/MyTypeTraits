@@ -5,6 +5,9 @@
 
 MY_STD_BEGIN
 
+//以下需要开洞,故未实现:
+//is_union,is_constant_evaluated
+
 template<bool val>
 struct BoolConstant
 {
@@ -18,7 +21,7 @@ using FalseConstant = BoolConstant<false>;
 
 //conjunction
 //据标准,其实现不能用折叠表达式,以防止代价高昂的实例化,故采用传统解包方法
-template<bool,typename...>
+template<bool, typename...>
 struct conjunctionImpl;
 
 template<typename First>
@@ -36,7 +39,7 @@ struct conjunction :TrueConstant {};//空包即为真
 template<typename First>
 struct conjunction<First> :conjunctionImpl<true, First> {};
 
-template<typename First,typename...Rest>
+template<typename First, typename...Rest>
 struct conjunction<First, Rest...> :conjunctionImpl<First::value, Rest...> {};
 
 template<typename...Tys>
@@ -89,7 +92,7 @@ using enable_if_t = typename enable_if<Test, Ty>::type;
 
 //conditional
 template <bool Test, typename Ty1, typename Ty2>
-struct conditional { 
+struct conditional {
 	using type = Ty1;//Test为真时选择Ty1
 };
 
@@ -108,7 +111,7 @@ struct is_same {
 };
 
 template <typename Ty>
-struct is_same<Ty,Ty> {
+struct is_same<Ty, Ty> {
 	static constexpr bool value = true;//Ty1与Ty2相同时提供true
 };
 
@@ -152,10 +155,6 @@ struct remove_cv { //非const/volatile实参,保持其原本类型
 template <typename Ty>
 using remove_cv_t = typename remove_cv<Ty>::type;
 
-#if(IS_CXX_GREATER_THAN_CPP20)
-constexpr bool is_constant_evaluated() noexcept;//需要开洞
-#endif
-
 UNNAMED_NAMESPACE_BEGIN
 
 //用于检测给定的类型是否在类型集合中,它不是标准库的一部分
@@ -171,7 +170,7 @@ inline constexpr bool is_integral_v = is_t_in_typeSet<remove_cv_t<Ty>, bool, cha
 #ifdef __cpp_char8_t
 	char8_t,
 #endif // __cpp_char8_t
-	wchar_t,char16_t, char32_t,//这些奇怪char是什么东西啊,stl还用一个宏去限制了char8_t的编译
+	wchar_t, char16_t, char32_t,//这些奇怪char是什么东西啊,stl还用一个宏去限制了char8_t的编译
 	short, unsigned short, int, unsigned int, long, unsigned long, long long, unsigned long long>;
 
 template <typename Ty>
@@ -219,7 +218,10 @@ using remove_reference_t = typename remove_reference<Ty>::type;
 template<typename Ty>
 struct is_void
 {
-	static constexpr bool value = is_same_v<Ty, void>;
+	//检查 T 是否为 void 类型。若 T 是类型 void 、 const void 、 volatile void 或 const volatile void ，
+	//则提供等于 true 的成员常量 value。
+	//虽然不知道cv限定的void有什么用,估测只是模板类型加工的中间产物
+	static constexpr bool value = is_same_v<remove_cv_t<Ty>, void>;
 };
 
 template <typename Ty>
@@ -255,7 +257,7 @@ template <typename Ty>
 using add_cv_t = typename add_cv<Ty>::type;
 
 //add_lvalue_reference,add_rvalue_reference
-template<typename Ty,typename=void>
+template<typename Ty, typename = void>
 struct AddReferenceImpl
 {
 	//对于不可创建引用的类型,例如void,据标准,提供源类型.
@@ -294,7 +296,7 @@ UNNAMED_NAMESPACE_END
 //declval
 template<typename T>
 typename add_rvalue_reference<T>::type declval() noexcept {
-	static_assert(alwaysFalse<T>,"尝试调用declval");
+	static_assert(alwaysFalse<T>, "尝试调用declval");
 	//如果直接用false,即使没有实例化declval,也会触发static_assert
 	//需要用一个变量模板将static_assert延迟到T真正被实例化
 }
@@ -312,7 +314,7 @@ struct remove_extent<Ty[]>//无界数组
 	using type = Ty;
 };
 
-template<typename Ty,size_t sz>
+template<typename Ty, size_t sz>
 struct remove_extent<Ty[sz]>//有界数组
 {
 	using type = Ty;
@@ -374,7 +376,7 @@ template <typename Ty>
 using remove_pointer_t = typename remove_pointer<Ty>::type;
 
 //add_pointer
-template <typename Ty,typename = void>
+template <typename Ty, typename = void>
 struct addPointerImpl {
 	using type = Ty;
 };
@@ -391,6 +393,133 @@ struct add_pointer {
 
 template <typename Ty>
 using add_pointer_t = typename add_pointer<Ty>::type;
+
+//is_array
+template <typename Ty>
+struct is_array {
+	static constexpr bool value = false;
+};
+
+template <typename Ty>
+struct is_array<Ty[]> {
+	static constexpr bool value = true;
+};
+
+template <typename Ty, size_t sz>
+struct is_array<Ty[sz]> {
+	static constexpr bool value = true;
+};
+
+template <typename Ty>
+inline constexpr bool is_array_v = is_array<Ty>::value;
+
+//is_reference
+template <typename Ty>
+struct is_lvalue_reference {
+	static constexpr bool value = false;
+};
+
+template <typename Ty>
+struct is_lvalue_reference<Ty&> {
+	static constexpr bool value = true;
+};
+
+template <typename Ty>
+struct is_rvalue_reference {
+	static constexpr bool value = false;
+};
+
+template <typename Ty>
+struct is_rvalue_reference<Ty&&> {
+	static constexpr bool value = true;
+};
+
+template <typename Ty>
+struct is_reference {
+	static constexpr bool value = disjunction_v<is_lvalue_reference<Ty>, is_rvalue_reference<Ty>>;
+};
+
+template <typename Ty>
+inline constexpr bool is_lvalue_reference_v = is_lvalue_reference<Ty>::value;
+
+template <typename Ty>
+inline constexpr bool is_rvalue_reference_v = is_rvalue_reference<Ty>::value;
+
+template <typename Ty>
+inline constexpr bool is_reference_v = is_reference<Ty>::value;
+
+//is_pointer
+template <typename>
+inline constexpr bool is_pointer_v = false; // determine whether _Ty is a pointer
+
+template <typename Ty>
+inline constexpr bool is_pointer_v<Ty*> = true;
+
+template <typename Ty>
+inline constexpr bool is_pointer_v<Ty* const> = true;
+
+template <typename Ty>
+inline constexpr bool is_pointer_v<Ty* volatile> = true;
+
+template <typename Ty>
+inline constexpr bool is_pointer_v<Ty* const volatile> = true;
+
+template <typename Ty>
+struct is_pointer : BoolConstant<is_pointer_v<Ty>> {};
+
+//is_null_pointer
+template <typename Ty>
+struct is_null_pointer {
+	//据标准,若 T 为 std::nullptr_t 、 const std::nullptr_t 、 volatile std::nullptr_t
+	//或 const volatile std::nullptr_t 类型，则提供等于 true 的成员常量 value 。
+	//所以Ty实际期望的并不是指针类型,而是nullptr_t及其cv版本
+	//在一开始的实现我犯了个错误,望文生义以为这是个函数,期望指针并检查指针是否指向空
+	static constexpr bool value = is_same_v<remove_cv_t<Ty>, std::nullptr_t>;
+};
+
+template <typename Ty>
+inline constexpr bool is_null_pointer_v = is_null_pointer<Ty>::value;
+
+//is_fundamental
+template <typename Ty>
+struct is_fundamental {
+	//若 T 为基础类型（即算术类型、 void 或 nullptr_t ），则提供等于 true 的成员常量 value 。
+	static constexpr bool value = disjunction_v<is_arithmetic<Ty>, is_null_pointer<Ty>, is_void<Ty>>;
+	//从写库的角度,因为这三个模板内部都会移除cv,所以无需在此处remove_cv_t<Ty>
+	//从开发的角度,建议写上
+};
+
+template <typename Ty>
+inline constexpr bool is_fundamental_v = is_fundamental<Ty>::value;
+
+//is_convertible
+//MSVC的实现是开洞
+
+template <typename, typename>
+constexpr FalseConstant isConvertibleImpl(...) noexcept { return FalseConstant{}; }
+
+template <typename From, typename To>
+constexpr decltype(static_cast<To>(declval<From>()), TrueConstant{}) isConvertibleImpl(int) noexcept { return TrueConstant{}; }
+
+template <typename From, typename To>
+struct is_convertible :decltype(isConvertibleImpl<From, To>(0)) {};
+
+template <typename From, typename To>
+inline constexpr bool is_convertible_v = is_convertible<From, To>::value;
+
+//is_class
+//MSVC的实现是开洞
+//据标准,枚举类型也是类类型
+template <typename Ty,typename=void>
+struct is_class :FalseConstant {};
+
+template <typename Ty>
+struct is_class<Ty,void_t<int Ty::*>> :TrueConstant {};
+
+template <typename Ty>
+inline constexpr bool is_class_v = is_class<Ty>::value;
+
+//is_enum
 
 MY_STD_END
 #endif//_MY_TYPE_TRAITS_

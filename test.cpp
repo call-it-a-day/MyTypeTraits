@@ -14,6 +14,11 @@ struct TestClass
 
 };
 
+class Base {};
+class Derived : public Base {};
+
+enum TestEnum{};
+
 int main() {
 	//²âÊÔÊı¾İ
 	int i = 42;
@@ -129,6 +134,58 @@ int main() {
 	//²âÊÔadd_pointer
 	test(is_same_v<add_pointer_t<const int>, int*>);
 	test(is_same_v<add_pointer_t<int[]>, int(*)[]>);
+	cout << "\n";
+	//²âÊÔis_array
+	test(is_array_v<int[]>);
+	test(is_array_v<int*>);
+	cout << "\n";
+	//²âÊÔis_reference
+	test(is_reference_v<int>);
+	test(is_reference_v<int&>);
+	test(is_reference_v<int&&>);
+	test(is_lvalue_reference_v<int>);
+	test(is_lvalue_reference_v<int&>);
+	test(is_lvalue_reference_v<int&&>);
+	test(is_rvalue_reference_v<int>);
+	test(is_rvalue_reference_v<int&>);
+	test(is_rvalue_reference_v<int&&>);
+	cout << "\n";
+	//²âÊÔis_pointer
+	test(is_pointer_v<int>);
+	test(is_pointer_v<int*>);
+	test(is_pointer_v<int[]>);
+	test(is_pointer_v<int(*)(void)>);
+	test(is_pointer_v<int*const volatile>);
+	cout << "\n";
+	//²âÊÔis_null_pointer
+	test(is_null_pointer_v<const volatile std::nullptr_t>);
+	test(is_null_pointer_v<int*>);
+	cout << "\n";
+	//²âÊÔis_fundamental
+	test(is_fundamental_v<const volatile std::nullptr_t>);
+	test(is_fundamental_v<const void>);
+	test(is_fundamental_v<const volatile int>);
+	test(is_fundamental_v<int*>);
+	test(is_fundamental_v<TestClass>);
+	cout << "\n";
+	//²âÊÔis_convertible
+	test(is_convertible_v<int,double>);
+	test(is_convertible_v<Derived*, Base*>);
+	test(is_convertible_v<const Derived*, Derived*>);
+	test(is_convertible_v<Base, Derived>);
+	test(is_convertible_v<Derived*, Base>);
+	test(is_convertible_v<Base, TestClass>);
+	cout << "\n";
+	//²âÊÔis_class
+	test(is_class_v<TestClass>);
+	test(is_class_v<int>);
+	test(is_class_v<TestEnum>);
+	cout << "\n";
+
+
+
+	//²âÊÔis_convertible
+
 	cout << "\n";
 	return 0;
 }
