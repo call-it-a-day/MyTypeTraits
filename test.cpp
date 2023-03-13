@@ -11,13 +11,15 @@ void test(const Args&...args) {
 
 struct TestClass
 {
-
+	void f(int, int) {
+		cout << 1;
+	}
 };
 
 class Base {};
 class Derived : public Base {};
 
-enum TestEnum{};
+enum class TestEnum{};
 
 int main() {
 	//²âÊÔÊı¾İ
@@ -176,15 +178,42 @@ int main() {
 	test(is_convertible_v<Derived*, Base>);
 	test(is_convertible_v<Base, TestClass>);
 	cout << "\n";
+	//²âÊÔis_enum
+	test(is_enum_v<TestClass>);
+	test(is_enum_v<int[]>);
+	test(is_enum_v<int*>);
+	test(is_enum_v<TestEnum>);
+	cout << "\n";
 	//²âÊÔis_class
 	test(is_class_v<TestClass>);
 	test(is_class_v<int>);
 	test(is_class_v<TestEnum>);
 	cout << "\n";
+	//²âÊÔis_compound
+	test(is_compound_v<TestClass>);
+	test(is_compound_v<int(void)>);
+	test(is_compound_v<int>);
+	test(is_compound_v<TestEnum>);
+	cout << "\n";
+	//²âÊÔis_member_function_pointer
+	test(is_member_function_pointer_v<decltype(&TestClass::f)>);
+	test(is_member_function_pointer_v<int*>);
+	cout << "\n";
+	//²âÊÔis_const
+	test(is_const_v<int>);
+	test(is_const_v<const int>);
+	test(is_const_v<volatile int>);
+	test(is_const_v<const volatile int>);
+	cout << "\n";
+	//²âÊÔis_volatile
+	test(is_volatile_v<int>);
+	test(is_volatile_v<const int>);
+	test(is_volatile_v<volatile int>);
+	test(is_volatile_v<const volatile int>);
+	cout << "\n";
 
 
-
-	//²âÊÔis_convertible
+	//²âÊÔ
 
 	cout << "\n";
 	return 0;

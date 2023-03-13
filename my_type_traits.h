@@ -507,19 +507,75 @@ struct is_convertible :decltype(isConvertibleImpl<From, To>(0)) {};
 template <typename From, typename To>
 inline constexpr bool is_convertible_v = is_convertible<From, To>::value;
 
+//is_enum
+
+template <typename Ty, typename = void>
+struct is_enum {
+	//先看能否向整型转换,再排除所有其他类型:算术,指针
+	static constexpr bool value = is_convertible_v<Ty, int>
+		&& !is_fundamental_v<Ty>
+		&& !is_pointer_v<Ty>;
+};
+
+template <typename Ty>
+struct is_enum<Ty, void_t<int Ty::*>> :FalseConstant {};//先检测是否是类类型
+
+template <typename Ty>
+inline constexpr bool is_enum_v = is_enum<Ty>::value;
+
 //is_class
 //MSVC的实现是开洞
 //据标准,枚举类型也是类类型
-template <typename Ty,typename=void>
-struct is_class :FalseConstant {};
+template <typename Ty, typename = void>
+struct is_class :BoolConstant<is_enum_v<Ty>> {};
 
 template <typename Ty>
-struct is_class<Ty,void_t<int Ty::*>> :TrueConstant {};
+struct is_class<Ty, void_t<int Ty::*>> :TrueConstant {};
 
 template <typename Ty>
 inline constexpr bool is_class_v = is_class<Ty>::value;
 
-//is_enum
+//is_compound
+template <typename Ty>
+struct is_compound : BoolConstant<!is_fundamental_v<Ty>> {};
+
+template <typename Ty>
+inline constexpr bool is_compound_v = is_compound<Ty>::value;
+
+//is_member_function_pointer
+template <typename Ty>
+struct is_member_function_pointer_impl :FalseConstant {};
+
+template <typename Class_t, typename Ret, typename...Args>
+struct is_member_function_pointer_impl<Ret(Class_t::*)(Args...)> :TrueConstant {};
+
+template <typename Ty>
+struct is_member_function_pointer :is_member_function_pointer_impl<remove_cv_t<Ty>> {};
+
+template <typename Ty>
+inline constexpr bool is_member_function_pointer_v = is_member_function_pointer<Ty>::value;
+
+//is_const
+//如果参数是const或const volatile,type均为真
+template <typename Ty>
+inline constexpr bool is_const_v = false;
+
+template <typename Ty>
+inline constexpr bool is_const_v<const Ty> = true;//变量模板可以偏特化
+
+template <typename Ty>
+struct is_const :BoolConstant<is_const_v<Ty>> {};
+
+//is_volatile
+//如果参数是volatile或const volatile,type均为真
+template <typename Ty>
+inline constexpr bool is_volatile_v = false;
+
+template <typename Ty>
+inline constexpr bool is_volatile_v<volatile Ty> = true;
+
+template <typename Ty>
+struct is_volatile :BoolConstant<is_volatile_v<Ty>> {};
 
 MY_STD_END
 #endif//_MY_TYPE_TRAITS_
