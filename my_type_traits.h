@@ -1,13 +1,18 @@
-#pragma once
+ï»¿#pragma once
 #ifndef _MY_TYPE_TRAITS_
 #define _MY_TYPE_TRAITS_
+
+//è¯¥åº“å®ç°äº†å¤§éƒ¨åˆ†æ ‡å‡†åº“type_traitså†…å®¹,é‡‡ç”¨çš„æ ‡å‡†æ˜¯c++17
+//ç”±äºtype_traitsä¸­çš„æ¨¡æ¿ç±»,éƒ¨åˆ†éœ€è¦å¼€æ´å®ç°,ä¾‹å¦‚is_pod,is_move_constructible,æ•…å…¶ä¸­åªå®ç°äº†éƒ¨åˆ†
+//is_convertible,is_class,is_enumå’Œis_empty,MSVCçš„å®ç°éƒ½æ˜¯å¼€æ´,
+//æˆ‘å°è¯•ç€ä¸å¼€æ´å†™äº†ä¸€ç‰ˆå®ç°;å…¶ä¸­is_emptyæ˜ç¡®æ£€æŸ¥å‡ºäº†æ— æ³•ä¿®å¤çš„bug
+
+#pragma warning(disable: 4180 4227)
+//4180:å¯¹å‡½æ•°/å¼•ç”¨åŠ cvé™å®šæ— æ„ä¹‰.åœ¨å®ç°is_functionæ—¶ç”¨åˆ°äº†æ­¤ç‰¹æ€§
+//4227:å¯¹å¼•ç”¨åŠ ä»¥cvæ˜¯ä¸€ç§è¿‡æ—¶çš„åšæ³•
 #include"basic_define.h"
 
 MY_STD_BEGIN
-
-//ÒÔÏÂĞèÒª¿ª¶´,¹ÊÎ´ÊµÏÖ:
-//is_union,is_constant_evaluated
-
 template<bool val>
 struct BoolConstant
 {
@@ -20,7 +25,8 @@ using TrueConstant = BoolConstant<true>;
 using FalseConstant = BoolConstant<false>;
 
 //conjunction
-//¾İ±ê×¼,ÆäÊµÏÖ²»ÄÜÓÃÕÛµş±í´ïÊ½,ÒÔ·ÀÖ¹´ú¼Û¸ß°ºµÄÊµÀı»¯,¹Ê²ÉÓÃ´«Í³½â°ü·½·¨
+//æ®æ ‡å‡†,å…¶å®ç°ä¸èƒ½ç”¨æŠ˜å è¡¨è¾¾å¼,ä»¥é˜²æ­¢ä»£ä»·é«˜æ˜‚çš„å®ä¾‹åŒ–,æ•…é‡‡ç”¨ä¼ ç»Ÿè§£åŒ…æ–¹æ³•
+IMPL_BEGIN
 template<bool, typename...>
 struct conjunctionImpl;
 
@@ -31,29 +37,31 @@ template<typename First, typename...Rest>
 struct conjunctionImpl<true, First, Rest...> :conjunctionImpl<First::value, Rest...> {};
 
 template<typename...Rest>
-struct conjunctionImpl<false, Rest...> :FalseConstant {};//¶ÌÂ·ÊµÀı»¯,ÖÕÖ¹µİ¹é
+struct conjunctionImpl<false, Rest...> :FalseConstant {};//çŸ­è·¯å®ä¾‹åŒ–,ç»ˆæ­¢é€’å½’
+IMPL_END
 
 template<typename...EmptyPack>
-struct conjunction :TrueConstant {};//¿Õ°ü¼´ÎªÕæ
+struct conjunction :TrueConstant {};//ç©ºåŒ…å³ä¸ºçœŸ
 
 template<typename First>
-struct conjunction<First> :conjunctionImpl<true, First> {};
+struct conjunction<First> :IMPL conjunctionImpl<true, First> {};
 
 template<typename First, typename...Rest>
-struct conjunction<First, Rest...> :conjunctionImpl<First::value, Rest...> {};
+struct conjunction<First, Rest...> :IMPL conjunctionImpl<First::value, Rest...> {};
 
 template<typename...Tys>
 inline constexpr bool conjunction_v = conjunction<Tys...>::value;
 
 //negation
 template<typename Ty>
-struct negation :BoolConstant<!static_cast<bool>(Ty::value)> {};//·ÀÖ¹B::valueÖØÔØ!ÏÈÇ¿×ªµ½bool
+struct negation :BoolConstant<!static_cast<bool>(Ty::value)> {};//é˜²æ­¢B::valueé‡è½½!å…ˆå¼ºè½¬åˆ°bool
 
 template <typename Ty>
 inline constexpr bool negation_v = negation<Ty>::value;
 
 //disjunction
-//¾İ±ê×¼,ÆäÊµÏÖ²»ÄÜÓÃÕÛµş±í´ïÊ½,ÒÔ·ÀÖ¹´ú¼Û¸ß°ºµÄÊµÀı»¯,¹Ê²ÉÓÃ´«Í³½â°ü·½·¨
+//æ®æ ‡å‡†,å…¶å®ç°ä¸èƒ½ç”¨æŠ˜å è¡¨è¾¾å¼,ä»¥é˜²æ­¢ä»£ä»·é«˜æ˜‚çš„å®ä¾‹åŒ–,æ•…é‡‡ç”¨ä¼ ç»Ÿè§£åŒ…æ–¹æ³•
+IMPL_BEGIN
 template<bool, typename...>
 struct disjunctionImpl;
 
@@ -64,23 +72,24 @@ template<typename First, typename...Rest>
 struct disjunctionImpl<false, First, Rest...> :disjunctionImpl<First::value, Rest...> {};
 
 template<typename...Rest>
-struct disjunctionImpl<true, Rest...> :TrueConstant {};//¶ÌÂ·ÊµÀı»¯,ÖÕÖ¹µİ¹é
+struct disjunctionImpl<true, Rest...> :TrueConstant {};//çŸ­è·¯å®ä¾‹åŒ–,ç»ˆæ­¢é€’å½’
+IMPL_END
 
 template<typename...EmptyPack>
-struct disjunction :FalseConstant {};//¿Õ°ü¼´Îª¼Ù
+struct disjunction :FalseConstant {};//ç©ºåŒ…å³ä¸ºå‡
 
 template<typename First>
-struct disjunction<First> :disjunctionImpl<false, First> {};
+struct disjunction<First> :IMPL disjunctionImpl<false, First> {};
 
 template<typename First, typename...Rest>
-struct disjunction<First, Rest...> :disjunctionImpl<First::value, Rest...> {};
+struct disjunction<First, Rest...> :IMPL disjunctionImpl<First::value, Rest...> {};
 
 template<typename...Tys>
 inline constexpr bool disjunction_v = disjunction<Tys...>::value;
 
 //enable_if
 template <bool Test, typename Ty = void>
-struct enable_if {};//testÎª¼ÙÊ±,ÎŞvalue³ÉÔ±
+struct enable_if {};//testä¸ºå‡æ—¶,æ— valueæˆå‘˜
 
 template <typename Ty>
 struct enable_if<true, Ty> {
@@ -93,12 +102,12 @@ using enable_if_t = typename enable_if<Test, Ty>::type;
 //conditional
 template <bool Test, typename Ty1, typename Ty2>
 struct conditional {
-	using type = Ty1;//TestÎªÕæÊ±Ñ¡ÔñTy1
+	using type = Ty1;//Testä¸ºçœŸæ—¶é€‰æ‹©Ty1
 };
 
 template <typename Ty1, typename Ty2>
 struct conditional<false, Ty1, Ty2> {
-	using type = Ty2;//TestÎªÕæÊ±Ñ¡ÔñTy2
+	using type = Ty2;//Testä¸ºçœŸæ—¶é€‰æ‹©Ty2
 };
 
 template <bool Test, typename Ty1, typename Ty2>
@@ -107,12 +116,12 @@ using conditional_t = typename conditional<Test, Ty1, Ty2>::type;
 //is_same
 template <typename Ty1, typename Ty2>
 struct is_same {
-	static constexpr bool value = false;//Ty1ÓëTy2²»Í¬Ê±Ìá¹©false
+	static constexpr bool value = false;//Ty1ä¸Ty2ä¸åŒæ—¶æä¾›false
 };
 
 template <typename Ty>
 struct is_same<Ty, Ty> {
-	static constexpr bool value = true;//Ty1ÓëTy2ÏàÍ¬Ê±Ìá¹©true
+	static constexpr bool value = true;//Ty1ä¸Ty2ç›¸åŒæ—¶æä¾›true
 };
 
 template <typename Ty1, typename Ty2>
@@ -120,7 +129,7 @@ inline constexpr bool is_same_v = is_same<Ty1, Ty2>::value;
 
 //remove_const
 template <typename Ty>
-struct remove_const { //·ÇconstÊµ²Î,±£³ÖÆäÔ­±¾ÀàĞÍ
+struct remove_const { //éconstå®å‚,ä¿æŒå…¶åŸæœ¬ç±»å‹
 	using type = Ty;
 };
 
@@ -134,7 +143,7 @@ using remove_const_t = typename remove_const<Ty>::type;
 
 //remove_volatile
 template <typename Ty>
-struct remove_volatile { //·ÇvolatileÊµ²Î,±£³ÖÆäÔ­±¾ÀàĞÍ
+struct remove_volatile { //évolatileå®å‚,ä¿æŒå…¶åŸæœ¬ç±»å‹
 	using type = Ty;
 };
 
@@ -148,37 +157,37 @@ using remove_volatile_t = typename remove_volatile<Ty>::type;
 
 //remove_cv
 template <typename Ty>
-struct remove_cv { //·Çconst/volatileÊµ²Î,±£³ÖÆäÔ­±¾ÀàĞÍ
+struct remove_cv { //éconst/volatileå®å‚,ä¿æŒå…¶åŸæœ¬ç±»å‹
 	using type = remove_volatile_t<remove_const_t<Ty>>;
 };
 
 template <typename Ty>
 using remove_cv_t = typename remove_cv<Ty>::type;
 
-UNNAMED_NAMESPACE_BEGIN
+IMPL_BEGIN
 
-//ÓÃÓÚ¼ì²â¸ø¶¨µÄÀàĞÍÊÇ·ñÔÚÀàĞÍ¼¯ºÏÖĞ,Ëü²»ÊÇ±ê×¼¿âµÄÒ»²¿·Ö
+//ç”¨äºæ£€æµ‹ç»™å®šçš„ç±»å‹æ˜¯å¦åœ¨ç±»å‹é›†åˆä¸­,å®ƒä¸æ˜¯æ ‡å‡†åº“çš„ä¸€éƒ¨åˆ†
 template <typename Ty, typename... TypeSet>
 inline constexpr bool is_t_in_typeSet = disjunction_v<is_same<Ty, TypeSet>...>;
 
-UNNAMED_NAMESPACE_END
+IMPL_END
 
 //is_integral
-//Õâ¶Î»ù±¾ÊÇ´ÓstlÖ±½Ó³­µÄ
+//è¿™æ®µåŸºæœ¬æ˜¯ä»stlç›´æ¥æŠ„çš„
 template<typename Ty>
-inline constexpr bool is_integral_v = is_t_in_typeSet<remove_cv_t<Ty>, bool, char, signed char, unsigned char,
+inline constexpr bool is_integral_v = IMPL is_t_in_typeSet<remove_cv_t<Ty>, bool, char, signed char, unsigned char,
 #ifdef __cpp_char8_t
 	char8_t,
 #endif // __cpp_char8_t
-	wchar_t, char16_t, char32_t,//ÕâĞ©Ææ¹ÖcharÊÇÊ²Ã´¶«Î÷°¡,stl»¹ÓÃÒ»¸öºêÈ¥ÏŞÖÆÁËchar8_tµÄ±àÒë
+	wchar_t, char16_t, char32_t,//è¿™äº›å¥‡æ€ªcharæ˜¯ä»€ä¹ˆä¸œè¥¿å•Š,stlè¿˜ç”¨ä¸€ä¸ªå®å»é™åˆ¶äº†char8_tçš„ç¼–è¯‘
 	short, unsigned short, int, unsigned int, long, unsigned long, long long, unsigned long long>;
 
 template <typename Ty>
-struct is_integral : BoolConstant<is_integral_v<Ty>> {};//ÏÈ¶¨ÒåÖµÔÚ¶¨ÒåÀàĞÍ,Ãî
+struct is_integral : BoolConstant<is_integral_v<Ty>> {};//å…ˆå®šä¹‰å€¼åœ¨å®šä¹‰ç±»å‹,å¦™
 
 //is_floating_point
 template <typename Ty>
-inline constexpr bool is_floating_point_v = is_t_in_typeSet<remove_cv_t<Ty>, float, double, long double>;
+inline constexpr bool is_floating_point_v = IMPL is_t_in_typeSet<remove_cv_t<Ty>, float, double, long double>;
 
 template <typename Ty>
 struct is_floating_point : BoolConstant<is_floating_point_v<Ty>> {};
@@ -218,9 +227,9 @@ using remove_reference_t = typename remove_reference<Ty>::type;
 template<typename Ty>
 struct is_void
 {
-	//¼ì²é T ÊÇ·ñÎª void ÀàĞÍ¡£Èô T ÊÇÀàĞÍ void ¡¢ const void ¡¢ volatile void »ò const volatile void £¬
-	//ÔòÌá¹©µÈÓÚ true µÄ³ÉÔ±³£Á¿ value¡£
-	//ËäÈ»²»ÖªµÀcvÏŞ¶¨µÄvoidÓĞÊ²Ã´ÓÃ,¹À²âÖ»ÊÇÄ£°åÀàĞÍ¼Ó¹¤µÄÖĞ¼ä²úÎï
+	//æ£€æŸ¥ T æ˜¯å¦ä¸º void ç±»å‹ã€‚è‹¥ T æ˜¯ç±»å‹ void ã€ const void ã€ volatile void æˆ– const volatile void ï¼Œ
+	//åˆ™æä¾›ç­‰äº true çš„æˆå‘˜å¸¸é‡ valueã€‚
+	//è™½ç„¶ä¸çŸ¥é“cvé™å®šçš„voidæœ‰ä»€ä¹ˆç”¨,ä¼°æµ‹åªæ˜¯æ¨¡æ¿ç±»å‹åŠ å·¥çš„ä¸­é—´äº§ç‰©
 	static constexpr bool value = is_same_v<remove_cv_t<Ty>, void>;
 };
 
@@ -257,29 +266,31 @@ template <typename Ty>
 using add_cv_t = typename add_cv<Ty>::type;
 
 //add_lvalue_reference,add_rvalue_reference
+IMPL_BEGIN
 template<typename Ty, typename = void>
 struct AddReferenceImpl
 {
-	//¶ÔÓÚ²»¿É´´½¨ÒıÓÃµÄÀàĞÍ,ÀıÈçvoid,¾İ±ê×¼,Ìá¹©Ô´ÀàĞÍ.
+	//å¯¹äºä¸å¯åˆ›å»ºå¼•ç”¨çš„ç±»å‹,ä¾‹å¦‚void,æ®æ ‡å‡†,æä¾›æºç±»å‹.
 	using lref = Ty;
 	using rref = Ty;
 };
 
 template<typename Ty>
-struct AddReferenceImpl<Ty, void_t<Ty&>>//ÀàĞÍÌ½²â
+struct AddReferenceImpl<Ty, void_t<Ty&>>//ç±»å‹æ¢æµ‹
 {
 	using lref = Ty&;
 	using rref = Ty&&;
 };
+IMPL_END
 
 template <typename Ty>
 struct add_lvalue_reference {
-	using type = typename AddReferenceImpl<Ty>::lref;
+	using type = typename IMPL AddReferenceImpl<Ty>::lref;
 };
 
 template <typename Ty>
 struct add_rvalue_reference {
-	using type = typename AddReferenceImpl<Ty>::rref;
+	using type = typename IMPL AddReferenceImpl<Ty>::rref;
 };
 
 template <typename Ty>
@@ -288,52 +299,52 @@ using add_lvalue_reference_t = typename add_lvalue_reference<Ty>::type;
 template <typename Ty>
 using add_rvalue_reference_t = typename add_rvalue_reference<Ty>::type;
 
-UNNAMED_NAMESPACE_BEGIN
+IMPL_BEGIN
 template<typename...>
 inline constexpr bool alwaysFalse = false;
-UNNAMED_NAMESPACE_END
+IMPL_END
 
 //declval
 template<typename T>
 typename add_rvalue_reference<T>::type declval() noexcept {
-	static_assert(alwaysFalse<T>, "³¢ÊÔµ÷ÓÃdeclval");
-	//Èç¹ûÖ±½ÓÓÃfalse,¼´Ê¹Ã»ÓĞÊµÀı»¯declval,Ò²»á´¥·¢static_assert
-	//ĞèÒªÓÃÒ»¸ö±äÁ¿Ä£°å½«static_assertÑÓ³Ùµ½TÕæÕı±»ÊµÀı»¯
+	static_assert(IMPL alwaysFalse<T>, "å°è¯•è°ƒç”¨declval");
+	//å¦‚æœç›´æ¥ç”¨false,å³ä½¿æ²¡æœ‰å®ä¾‹åŒ–declval,ä¹Ÿä¼šè§¦å‘static_assert
+	//éœ€è¦ç”¨ä¸€ä¸ªå˜é‡æ¨¡æ¿å°†static_assertå»¶è¿Ÿåˆ°TçœŸæ­£è¢«å®ä¾‹åŒ–
 }
 
 //remove_extent,remove_all_extents
 template<typename Ty>
-struct remove_extent//·ÇÊı×éÀàĞÍ
+struct remove_extent//éæ•°ç»„ç±»å‹
 {
 	using type = Ty;
 };
 
 template<typename Ty>
-struct remove_extent<Ty[]>//ÎŞ½çÊı×é
+struct remove_extent<Ty[]>//æ— ç•Œæ•°ç»„
 {
 	using type = Ty;
 };
 
 template<typename Ty, size_t sz>
-struct remove_extent<Ty[sz]>//ÓĞ½çÊı×é
+struct remove_extent<Ty[sz]>//æœ‰ç•Œæ•°ç»„
 {
 	using type = Ty;
 };
 
 template<typename Ty>
-struct remove_all_extents//·ÇÊı×éÀàĞÍ
+struct remove_all_extents//éæ•°ç»„ç±»å‹
 {
 	using type = Ty;
 };
 
 template<typename Ty>
-struct remove_all_extents<Ty[]>//ÎŞ½çÊı×é
+struct remove_all_extents<Ty[]>//æ— ç•Œæ•°ç»„
 {
 	using type = typename remove_all_extents<Ty>::type;
 };
 
 template<typename Ty, size_t sz>
-struct remove_all_extents<Ty[sz]>//ÓĞ½çÊı×é
+struct remove_all_extents<Ty[sz]>//æœ‰ç•Œæ•°ç»„
 {
 	using type = typename remove_all_extents<Ty>::type;
 };
@@ -345,8 +356,8 @@ template<typename Ty>
 using remove_all_extents_t = typename remove_all_extents<Ty>::type;
 
 //remove_pointer
-//¾İ±ê×¼,remove_pointer²»»á¶ÔÊı×éÉúĞ§
-//¶ÔÖ¸Õë,typeÊÇÆäËùÖ¸ÏòµÄÀàĞÍ,¹Ê»áºöÂÔµ×²ãcvÏŞ¶¨,±£Áô¶¥²ãcvÏŞ¶¨
+//æ®æ ‡å‡†,remove_pointerä¸ä¼šå¯¹æ•°ç»„ç”Ÿæ•ˆ
+//å¯¹æŒ‡é’ˆ,typeæ˜¯å…¶æ‰€æŒ‡å‘çš„ç±»å‹,æ•…ä¼šå¿½ç•¥åº•å±‚cvé™å®š,ä¿ç•™é¡¶å±‚cvé™å®š
 template <typename Ty>
 struct remove_pointer {
 	using type = Ty;
@@ -376,19 +387,21 @@ template <typename Ty>
 using remove_pointer_t = typename remove_pointer<Ty>::type;
 
 //add_pointer
+IMPL_BEGIN
 template <typename Ty, typename = void>
 struct addPointerImpl {
 	using type = Ty;
 };
 
-template <typename Ty>//²»ÄÜÌá¹©Ò»¸ö¶îÍâµÄtypename RefTo=remove_reference_t<Ty>,ÒòÎªÌØ»¯Ê±²»ÄÜ´øÄ¬ÈÏÄ£°å²ÎÊı
-struct addPointerImpl<Ty, void_t<remove_reference_t<Ty>*>> {//°ÑÎŞ·¨Ìí¼ÓÖ¸ÕëµÄÀàĞÍsfinaeµô
-	using type = remove_reference_t<Ty>*;//Ö¸Ïò T »ò T ËùÒıÓÃÀàĞÍµÄÖ¸Õë
+template <typename Ty>//ä¸èƒ½æä¾›ä¸€ä¸ªé¢å¤–çš„typename RefTo=remove_reference_t<Ty>,å› ä¸ºç‰¹åŒ–æ—¶ä¸èƒ½å¸¦é»˜è®¤æ¨¡æ¿å‚æ•°
+struct addPointerImpl<Ty, void_t<remove_reference_t<Ty>*>> {//æŠŠæ— æ³•æ·»åŠ æŒ‡é’ˆçš„ç±»å‹sfinaeæ‰
+	using type = remove_reference_t<Ty>*;//æŒ‡å‘ T æˆ– T æ‰€å¼•ç”¨ç±»å‹çš„æŒ‡é’ˆ
 };
+IMPL_END
 
 template <typename Ty>
 struct add_pointer {
-	using type = typename addPointerImpl<Ty>::type;
+	using type = typename IMPL addPointerImpl<Ty>::type;
 };
 
 template <typename Ty>
@@ -470,10 +483,10 @@ struct is_pointer : BoolConstant<is_pointer_v<Ty>> {};
 //is_null_pointer
 template <typename Ty>
 struct is_null_pointer {
-	//¾İ±ê×¼,Èô T Îª std::nullptr_t ¡¢ const std::nullptr_t ¡¢ volatile std::nullptr_t
-	//»ò const volatile std::nullptr_t ÀàĞÍ£¬ÔòÌá¹©µÈÓÚ true µÄ³ÉÔ±³£Á¿ value ¡£
-	//ËùÒÔTyÊµ¼ÊÆÚÍûµÄ²¢²»ÊÇÖ¸ÕëÀàĞÍ,¶øÊÇnullptr_t¼°Æäcv°æ±¾
-	//ÔÚÒ»¿ªÊ¼µÄÊµÏÖÎÒ·¸ÁË¸ö´íÎó,ÍûÎÄÉúÒåÒÔÎªÕâÊÇ¸öº¯Êı,ÆÚÍûÖ¸Õë²¢¼ì²éÖ¸ÕëÊÇ·ñÖ¸Ïò¿Õ
+	//æ®æ ‡å‡†,è‹¥ T ä¸º std::nullptr_t ã€ const std::nullptr_t ã€ volatile std::nullptr_t
+	//æˆ– const volatile std::nullptr_t ç±»å‹ï¼Œåˆ™æä¾›ç­‰äº true çš„æˆå‘˜å¸¸é‡ value ã€‚
+	//æ‰€ä»¥Tyå®é™…æœŸæœ›çš„å¹¶ä¸æ˜¯æŒ‡é’ˆç±»å‹,è€Œæ˜¯nullptr_tåŠå…¶cvç‰ˆæœ¬
+	//åœ¨ä¸€å¼€å§‹çš„å®ç°æˆ‘çŠ¯äº†ä¸ªé”™è¯¯,æœ›æ–‡ç”Ÿä¹‰ä»¥ä¸ºè¿™æ˜¯ä¸ªå‡½æ•°,æœŸæœ›æŒ‡é’ˆå¹¶æ£€æŸ¥æŒ‡é’ˆæ˜¯å¦æŒ‡å‘ç©º
 	static constexpr bool value = is_same_v<remove_cv_t<Ty>, std::nullptr_t>;
 };
 
@@ -483,49 +496,49 @@ inline constexpr bool is_null_pointer_v = is_null_pointer<Ty>::value;
 //is_fundamental
 template <typename Ty>
 struct is_fundamental {
-	//Èô T Îª»ù´¡ÀàĞÍ£¨¼´ËãÊõÀàĞÍ¡¢ void »ò nullptr_t £©£¬ÔòÌá¹©µÈÓÚ true µÄ³ÉÔ±³£Á¿ value ¡£
+	//è‹¥ T ä¸ºåŸºç¡€ç±»å‹ï¼ˆå³ç®—æœ¯ç±»å‹ã€ void æˆ– nullptr_t ï¼‰ï¼Œåˆ™æä¾›ç­‰äº true çš„æˆå‘˜å¸¸é‡ value ã€‚
 	static constexpr bool value = disjunction_v<is_arithmetic<Ty>, is_null_pointer<Ty>, is_void<Ty>>;
-	//´ÓĞ´¿âµÄ½Ç¶È,ÒòÎªÕâÈı¸öÄ£°åÄÚ²¿¶¼»áÒÆ³ıcv,ËùÒÔÎŞĞèÔÚ´Ë´¦remove_cv_t<Ty>
-	//´Ó¿ª·¢µÄ½Ç¶È,½¨ÒéĞ´ÉÏ
+	//ä»å†™åº“çš„è§’åº¦,å› ä¸ºè¿™ä¸‰ä¸ªæ¨¡æ¿å†…éƒ¨éƒ½ä¼šç§»é™¤cv,æ‰€ä»¥æ— éœ€åœ¨æ­¤å¤„remove_cv_t<Ty>
+	//ä»å¼€å‘çš„è§’åº¦,å»ºè®®å†™ä¸Š
 };
 
 template <typename Ty>
 inline constexpr bool is_fundamental_v = is_fundamental<Ty>::value;
 
 //is_convertible
-//MSVCµÄÊµÏÖÊÇ¿ª¶´
-
+//MSVCçš„å®ç°æ˜¯å¼€æ´
+IMPL_BEGIN
 template <typename, typename>
 constexpr FalseConstant isConvertibleImpl(...) noexcept { return FalseConstant{}; }
 
 template <typename From, typename To>
 constexpr decltype(static_cast<To>(declval<From>()), TrueConstant{}) isConvertibleImpl(int) noexcept { return TrueConstant{}; }
-
+IMPL_END
 template <typename From, typename To>
-struct is_convertible :decltype(isConvertibleImpl<From, To>(0)) {};
+struct is_convertible :decltype(IMPL isConvertibleImpl<From, To>(0)) {};
 
 template <typename From, typename To>
 inline constexpr bool is_convertible_v = is_convertible<From, To>::value;
 
 //is_enum
-
+//MSVCçš„å®ç°æ˜¯å¼€æ´
 template <typename Ty, typename = void>
 struct is_enum {
-	//ÏÈ¿´ÄÜ·ñÏòÕûĞÍ×ª»»,ÔÙÅÅ³ıËùÓĞÆäËûÀàĞÍ:ËãÊõ,Ö¸Õë
+	//å…ˆçœ‹èƒ½å¦å‘æ•´å‹è½¬æ¢,å†æ’é™¤æ‰€æœ‰å…¶ä»–ç±»å‹:ç®—æœ¯,æŒ‡é’ˆ
 	static constexpr bool value = is_convertible_v<Ty, int>
 		&& !is_fundamental_v<Ty>
 		&& !is_pointer_v<Ty>;
 };
 
 template <typename Ty>
-struct is_enum<Ty, void_t<int Ty::*>> :FalseConstant {};//ÏÈ¼ì²âÊÇ·ñÊÇÀàÀàĞÍ
+struct is_enum<Ty, void_t<int Ty::*>> :FalseConstant {};//å…ˆæ£€æµ‹æ˜¯å¦æ˜¯ç±»ç±»å‹
 
 template <typename Ty>
 inline constexpr bool is_enum_v = is_enum<Ty>::value;
 
 //is_class
-//MSVCµÄÊµÏÖÊÇ¿ª¶´
-//¾İ±ê×¼,Ã¶¾ÙÀàĞÍÒ²ÊÇÀàÀàĞÍ
+//MSVCçš„å®ç°æ˜¯å¼€æ´
+//æ®æ ‡å‡†,æšä¸¾ç±»å‹ä¹Ÿæ˜¯ç±»ç±»å‹
 template <typename Ty, typename = void>
 struct is_class :BoolConstant<is_enum_v<Ty>> {};
 
@@ -543,31 +556,33 @@ template <typename Ty>
 inline constexpr bool is_compound_v = is_compound<Ty>::value;
 
 //is_member_function_pointer
+IMPL_BEGIN
 template <typename Ty>
 struct is_member_function_pointer_impl :FalseConstant {};
 
 template <typename Class_t, typename Ret, typename...Args>
 struct is_member_function_pointer_impl<Ret(Class_t::*)(Args...)> :TrueConstant {};
+IMPL_END
 
 template <typename Ty>
-struct is_member_function_pointer :is_member_function_pointer_impl<remove_cv_t<Ty>> {};
+struct is_member_function_pointer :IMPL is_member_function_pointer_impl<remove_cv_t<Ty>> {};
 
 template <typename Ty>
 inline constexpr bool is_member_function_pointer_v = is_member_function_pointer<Ty>::value;
 
 //is_const
-//Èç¹û²ÎÊıÊÇconst»òconst volatile,type¾ùÎªÕæ
+//å¦‚æœå‚æ•°æ˜¯constæˆ–const volatile,typeå‡ä¸ºçœŸ
 template <typename Ty>
 inline constexpr bool is_const_v = false;
 
 template <typename Ty>
-inline constexpr bool is_const_v<const Ty> = true;//±äÁ¿Ä£°å¿ÉÒÔÆ«ÌØ»¯
+inline constexpr bool is_const_v<const Ty> = true;//å˜é‡æ¨¡æ¿å¯ä»¥åç‰¹åŒ–
 
 template <typename Ty>
 struct is_const :BoolConstant<is_const_v<Ty>> {};
 
 //is_volatile
-//Èç¹û²ÎÊıÊÇvolatile»òconst volatile,type¾ùÎªÕæ
+//å¦‚æœå‚æ•°æ˜¯volatileæˆ–const volatile,typeå‡ä¸ºçœŸ
 template <typename Ty>
 inline constexpr bool is_volatile_v = false;
 
@@ -576,6 +591,306 @@ inline constexpr bool is_volatile_v<volatile Ty> = true;
 
 template <typename Ty>
 struct is_volatile :BoolConstant<is_volatile_v<Ty>> {};
+
+//is_function
+//å–å·§çš„åšæ³•,ä»…å‡½æ•°æˆ–å¼•ç”¨ç±»å‹æ— æ³•è¢«cvé™å®š
+template <typename Ty>
+struct is_function
+{
+	static constexpr bool value = !is_const_v<const Ty> && !is_reference_v<Ty>;
+};
+
+template <typename Ty>
+inline constexpr bool is_function_v = is_function<Ty>::value;
+
+//is_object
+//è‹¥ T ä¸ºå¯¹è±¡ç±»å‹ï¼ˆå³ä»»ä½•å‡½æ•°ã€å¼•ç”¨æˆ– void ç±»å‹å¤–çš„å¯æœ‰ cv é™å®šçš„ç±»å‹
+//ä»…å‡½æ•°æˆ–å¼•ç”¨ç±»å‹æ— æ³•è¢«cvé™å®š
+template <typename Ty>
+struct is_object
+{
+	static constexpr bool value = is_const_v<const Ty> && !is_void_v<Ty>;
+};
+
+template <typename Ty>
+inline constexpr bool is_object_v = is_object<Ty>::value;
+
+//is_member_object_pointer
+IMPL_BEGIN
+template <typename>
+struct is_member_object_pointer_impl
+{
+	static constexpr bool value = false;
+};
+
+template <typename Class_t, typename Object_t>
+struct is_member_object_pointer_impl<Object_t Class_t::*>
+{
+	static constexpr bool value = !is_function_v<Object_t>;
+	//ç¬¦åˆObject_t Class_t::*å½¢å¼çš„åªå¯èƒ½æ˜¯æˆå‘˜å‡½æ•°æŒ‡é’ˆæˆ–æ˜¯æˆå‘˜å¯¹è±¡æŒ‡é’ˆ
+	//æœ€åˆå®ç°is_member_object_pointerå’Œis_member_function_pointeræ—¶æˆ‘å›å¿†èµ·æ·±æ¢ä¸Šè®²èµ·è¿‡è¿™ä¿©æŒ‡é’ˆçš„æœ¬è´¨
+	//åœ¨äºæˆå‘˜å¯¹è±¡æŒ‡é’ˆå…¶å®æ˜¯ä¸ªç´¢å¼•,å–å…¶å€¼ä¼šå‘ç°å…¶å®æ˜¯ä¸ªæ•´æ•°è€Œéåœ°å€
+	//è€Œæˆå‘˜å‡½æ•°æŒ‡é’ˆåˆ™å› ä¸ºå¯èƒ½æ˜¯ä¸ªè™šè¡¨ç´¢å¼•,ä¹Ÿå¯èƒ½æ˜¯ä¸ªåœ°å€,æ•…è€Œç¼–è¯‘å™¨ä¼šä¸ºå…¶åˆ†é…ä¸€ä¸ªç»“æ„ä½“æ¥ç¡®å®šå…¶å€¼
+	//èµ·åˆæƒ³ä»å…¶æœ¬è´¨ä¸‹æ–‡ç« ,è¿˜å¥½çœ‹äº†ä¸‹msvcçš„å®ç°...çœŸç®€å•
+};
+IMPL_END
+
+template <typename Ty>
+struct is_member_object_pointer
+{
+	static constexpr bool value = IMPL is_member_object_pointer_impl<remove_cv_t<Ty>>::value;
+};
+
+template <typename Ty>
+inline constexpr bool is_member_object_pointer_v = is_member_object_pointer<Ty>::value;
+
+//is_member_pointer
+template <typename Ty>
+struct is_member_pointer
+{
+	static constexpr bool value = is_member_object_pointer_v<Ty> || is_member_function_pointer_v<Ty>;
+};
+
+template <typename Ty>
+inline constexpr bool is_member_pointer_v = is_member_pointer<Ty>::value;
+
+//is_scalar
+template <typename Ty>
+struct is_scalar
+{
+	//ä¸‹åˆ—ç±»å‹ç»Ÿç§°ä¸ºæ ‡é‡ç±»å‹ï¼š
+	//ç®—æœ¯ç±»å‹,æšä¸¾ç±»å‹,æŒ‡é’ˆç±»å‹,æˆå‘˜æŒ‡é’ˆç±»å‹,std::nullptr_t,è¿™äº›ç±»å‹çš„æœ‰ cv é™å®šç‰ˆæœ¬
+	using RemoveCVTy = remove_cv_t<Ty>;
+	static constexpr bool value = disjunction_v<is_arithmetic<RemoveCVTy>, is_enum<RemoveCVTy>,
+		is_pointer<RemoveCVTy>, is_member_pointer<Ty>, is_null_pointer<Ty>>;
+};
+
+template <typename Ty>
+inline constexpr bool is_scalar_v = is_scalar<Ty>::value;
+
+//is_empty
+//MSVCçš„å®ç°æ˜¯å¼€æ´
+
+//ä¸‹é¢æ˜¯ä¸ªé”™è¯¯çš„å®ç°,å› ä¸ºsizeof(ç©ºç±»)å¾—åˆ°1,è™½ç„¶sizeofæ˜¯ä¸æ±‚å€¼è¡¨è¾¾å¼,ä½†ç©ºç±»å¿…é¡»å®ä¾‹åŒ–,å¿…é¡»æœ‰å”¯ä¸€åœ°å€
+//template <typename Ty>
+//struct is_empty
+//{
+//	static constexpr bool value = (sizeof(Ty) == 0);
+//};
+//
+//template <typename Ty>
+//inline constexpr bool is_empty_v = is_empty<Ty>::value;
+
+//è¿™ä¸ªå®ç°çš„æƒ³æ³•æ˜¯åˆ©ç”¨ç©ºåŸºç±»ä¼˜åŒ–
+//ä½†å®ƒæœ‰ä¸ªbug,è¦æ±‚å‚æ•°ä¸€å®šè¦èƒ½è¢«ç»§æ‰¿,å³å¯¹äºfinalç±»ä¼šç¼–è¯‘é”™è¯¯,æ‰€ä»¥åªèƒ½å¼€æ´äº†
+IMPL_BEGIN
+template <typename, typename = void>
+struct is_empty_impl {};
+
+template <typename Ty>
+struct is_empty_impl <Ty, void_t<enable_if_t<is_class_v<Ty>>>> :Ty {//é˜²æ­¢Tyæ˜¯éæ³•åŸºç±»
+	int m;//mçš„å¤§å°åªè¦æ¯”1å­—èŠ‚å¤§å°±è¡Œ
+};
+
+//struct EmptyClass {};
+
+IMPL_END
+
+template <typename Ty>
+//è€ƒè™‘å·¥ç¨‹çš„å†™æ³•
+//inline constexpr bool is_empty_v = (sizeof(IMPL is_empty_impl<Ty>) == sizeof(IMPL is_empty_impl<IMPL EmptyClass>));
+//è€ƒè™‘æ•ˆç‡çš„å†™æ³•
+inline constexpr bool is_empty_v = (sizeof(IMPL is_empty_impl<Ty>) == sizeof(int));
+
+template <typename Ty>
+struct is_empty :BoolConstant<is_empty_v<Ty>> {};
+
+//is_signed
+template <typename Ty, typename = void>
+struct is_signed {
+	static constexpr bool value = false;
+};
+
+template <typename Ty>
+struct is_signed<Ty, enable_if_t<is_arithmetic_v<Ty>>> {
+	using RemoveCVTy = remove_cv_t<Ty>;
+	static constexpr bool value = (RemoveCVTy(-1) < RemoveCVTy(0));
+};
+
+template <typename Ty>
+inline constexpr bool is_signed_v = is_signed<Ty>::value;
+
+//is_unsigned
+template <typename Ty, typename = void>
+struct is_unsigned {
+	static constexpr bool value = false;
+};
+
+template <typename Ty>
+struct is_unsigned<Ty, enable_if_t<is_arithmetic_v<Ty>>> {
+	using RemoveCVTy = remove_cv_t<Ty>;
+	static constexpr bool value = (RemoveCVTy(0) < RemoveCVTy(-1));
+};
+
+template <typename Ty>
+inline constexpr bool is_unsigned_v = is_unsigned<Ty>::value;
+
+//alignment_of
+//å­¦äº†å¿«ä¸¤å¹´cppè¿˜æ˜¯å¤´ä¸€æ¬¡å¬è¯´è¿™ç©æ„
+//æä¾›ç­‰äº T ç±»å‹å¯¹é½è¦æ±‚çš„æˆå‘˜å¸¸é‡ value ï¼Œå¦‚åŒç”¨ alignof è¡¨è¾¾å¼è·å¾—ã€‚è‹¥ T æ˜¯æ•°ç»„ç±»å‹ï¼Œ
+//åˆ™è¿”å›å…ƒç´ ç±»å‹(è¯•äº†ä¸€ä¸‹,å¯¹äºå¤šç»´æ•°ç»„,å¾—åˆ°çš„ä¸æ˜¯alignofæŒ‡é’ˆ)çš„å¯¹é½è¦æ±‚ï¼Œè‹¥ T æ˜¯å¼•ç”¨ç±»å‹ï¼Œåˆ™è¿”å›å¤‡ç”¨ç”¨ç±»å‹çš„å¯¹é½è¦æ±‚ã€‚
+//æ®æ ‡å‡†,è‹¥ alignof(T) ä¸æ˜¯åˆæ³•è¡¨è¾¾å¼ï¼Œåˆ™è¡Œä¸ºæœªå®šä¹‰ã€‚æ•…åªéœ€è€ƒè™‘æˆåŠŸæƒ…å½¢
+//è‹¥Tä¸ºæšä¸¾ç±»å‹,åˆ™è¿”å›å…¶åº•å±‚ç±»å‹
+template <typename Ty>
+struct alignment_of {
+	static constexpr size_t value = alignof(remove_all_extents_t<remove_reference_t<remove_cv_t<Ty>>>);
+};
+
+template <typename Ty>
+inline constexpr size_t alignment_of_v = alignment_of<Ty>::value;
+
+//aligned_storage,aligned_unionå·²ç»è¢«å¼ƒç”¨äº†,å°±å·ä¸ªæ‡’ä¸å®ç°äº†
+//rank
+template <typename Ty>
+inline constexpr size_t rank_v = 0;
+
+template <typename Ty>
+inline constexpr size_t rank_v<Ty[]> = rank_v<Ty>+1;
+
+template <typename Ty, size_t sz>
+inline constexpr size_t rank_v<Ty[sz]> = rank_v<Ty>+1;
+
+template <typename Ty>
+struct rank {
+	static constexpr size_t value = rank_v<Ty>;
+};
+
+//extent
+template <typename Ty, unsigned N = 0>
+inline constexpr size_t extent_v = 0;
+
+template <typename Ty, size_t Eles>
+inline constexpr size_t extent_v<Ty[Eles], 0> = Eles;//è¿™é‡Œè·å–å…ƒç´ æ•°é‡
+
+//åªå¯¹æ•°ç»„ç»§ç»­é€’å½’
+template <typename Ty, size_t Eles, unsigned N>
+inline constexpr size_t extent_v <Ty[Eles], N> = extent_v<Ty, N - 1>;
+
+template <typename Ty, unsigned N>
+inline constexpr size_t extent_v <Ty[], N> = extent_v<Ty, N - 1>;
+
+template <typename Ty, unsigned N = 0>
+struct extent {
+	static constexpr size_t value = extent_v<Ty, N>;
+};
+
+//decay
+//å¯¹ç±»å‹ T åº”ç”¨å·¦å€¼åˆ°å³å€¼ã€æ•°ç»„åˆ°æŒ‡é’ˆåŠå‡½æ•°åˆ°æŒ‡é’ˆéšå¼è½¬æ¢ï¼Œç§»é™¤ cv é™å®šç¬¦ï¼Œ
+//â—¦è‹¥ T æŒ‡åâ€œ U çš„æ•°ç»„â€æˆ–â€œåˆ° U çš„æ•°ç»„çš„å¼•ç”¨â€ç±»å‹ï¼Œåˆ™æˆå‘˜ typedef type ä¸º U* ã€‚
+//â—¦å¦åˆ™ï¼Œè‹¥ T ä¸ºå‡½æ•°ç±»å‹ F æˆ–åˆ°å®ƒçš„å¼•ç”¨ï¼Œåˆ™æˆå‘˜ typedef type ä¸ºstd::add_pointer<F>::type ã€‚
+//â—¦å¦åˆ™ï¼Œæˆå‘˜ typedef type ä¸º std::remove_cv<std::remove_reference<T>::type>::type ã€‚
+IMPL_BEGIN
+template <typename Ty, typename = void>
+struct decay_impl {
+	using type = Ty;
+};
+
+template <typename Ty>
+struct decay_impl<Ty, enable_if_t<is_array_v<Ty> || is_function_v<Ty>>> {
+	using type = add_pointer_t<remove_extent_t<Ty>>;
+};
+IMPL_END
+
+template <typename Ty>
+struct decay {
+	using type = typename IMPL decay_impl<remove_cv_t<remove_reference_t<Ty>>>::type;
+};
+
+template <typename Ty>
+using decay_t = typename decay<Ty>::type;
+
+//common_type
+template< typename... EmptyPack >
+struct common_type {};
+
+template<typename SingleTy>
+struct common_type<SingleTy> {
+	//â—¦è‹¥ sizeof...(T) ä¸ºä¸€ï¼ˆå³ T... åªå«ä¸€ä¸ªç±»å‹ T0 ï¼‰ï¼Œ
+	//åˆ™æˆå‘˜ type æŒ‡åä¸ std::common_type<T0, T0>::type ç›¸åŒçš„ç±»å‹ï¼Œè‹¥å®ƒå­˜åœ¨ï¼›å¦åˆ™æ— æˆå‘˜ type 
+	//ä»¥ä¸Šæ˜¯æ ‡å‡†çš„å®šä¹‰,ä½†æˆ‘ä¸æ˜¯å¾ˆç†è§£è¿™æ ·åšçš„æ·±æ„,msvcçš„å®ç°æ˜¯:
+	//template <class _Ty1>
+	//struct common_type<_Ty1> : common_type<_Ty1, _Ty1> {};
+	using type = SingleTy;
+};
+
+IMPL_BEGIN
+template<typename Ty1, typename Ty2,typename=void>
+struct common_type_2_impl {};
+
+template<typename Ty1, typename Ty2>
+struct common_type_2_impl<Ty1,Ty2, void_t<decay_t<decltype(false ? declval<Ty1>() : declval<Ty2>())>>> {
+	using type = decay_t<decltype(false ? declval<Ty1>() : declval<Ty2>())>;
+	//åŸæ¥ä¸‰ç›®è¿ç®—ç¬¦çš„è¿”å›ç±»å‹æ˜¯ä¿©è¡¨è¾¾å¼çš„å…¬å…±ç±»å‹
+};
+IMPL_END
+
+//â—¦è‹¥åº”ç”¨ std::decay åˆ°è‡³å°‘ T1 ä¸ T2 ä¸­è‡³å°‘ä¸€ä¸ªç±»å‹åäº§ç”Ÿç›¸å¼‚ç±»å‹ï¼Œåˆ™æˆå‘˜ type æŒ‡åä¸
+//std::common_type<std::decay<T1>::type, std::decay<T2>::type>::type ç›¸åŒçš„ç±»å‹
+template<typename Ty1, typename Ty2>
+struct common_type<Ty1, Ty2> : IMPL common_type_2_impl<decay_t<Ty1>, decay_t<Ty2>, void> {};
+
+IMPL_BEGIN
+template<typename,typename Ty1, typename Ty2, typename... Rest>
+struct common_type_3_impl {};
+
+template<typename Ty1, typename Ty2, typename... Rest>
+struct common_type_3_impl<void_t<typename common_type<Ty1, Ty2>::type>, Ty1, Ty2, Rest...> :
+	common_type<typename common_type<Ty1, Ty2>::type, Rest...> {};//æ¢æµ‹æ˜¯å¦æœ‰typename common_type<Ty1, Ty2>::type
+IMPL_END
+
+//â—¦è‹¥ sizeof...(T) å¤§äºäºŒï¼ˆå³ T... ç”±ç±»å‹ T1, T2, R... ç»„æˆï¼‰ï¼Œåˆ™è‹¥ std::common_type<T1, T2>::type å­˜åœ¨ï¼Œ
+//åˆ™æˆå‘˜ type æŒ‡ä»£ std::common_type<std::common_type<T1, T2>::type, R...>::type ï¼Œè‹¥å­˜åœ¨è¿™ç§ç±»å‹ã€‚
+//å…¶ä»–æ‰€æœ‰æƒ…å†µä¸‹ï¼Œæ— æˆå‘˜ type ã€‚
+template<typename Ty1, typename Ty2,typename... Rest>
+struct common_type<Ty1, Ty2, Rest...> :IMPL common_type_3_impl<void, Ty1, Ty2, Rest...> {};
+
+template <typename... Tys>
+using common_type_t = typename common_type<Tys...>::type;
+
+//forward
+template<typename Ty>
+NODISCARD constexpr Ty&& forward(remove_reference_t<Ty>& arg) noexcept {
+	return static_cast<Ty&&>(arg);
+}
+
+//forward<å·¦å€¼å¼•ç”¨>(å³å€¼)éæ³•
+template<typename Ty>
+NODISCARD constexpr enable_if_t<!is_lvalue_reference_v<Ty>, Ty&&> forward(remove_reference_t<Ty>&& arg) noexcept {
+	return static_cast<Ty&&>(arg);
+}
+
+//move
+template<typename Ty>
+NODISCARD constexpr remove_reference_t<Ty>&& move(Ty&& arg) noexcept { // forward _Arg as movable
+	return static_cast<remove_reference_t<Ty>&&>(arg);
+}
+
+//remove_cvref
+template<typename Ty>
+struct remove_cvref
+{
+	using type = remove_cv_t<remove_reference_t<Ty>>;
+};
+
+template<typename Ty>
+using remove_cvref_t = typename remove_cvref<Ty>::type;
+
+//invoke
+//template< typename F, class... Args >
+//
+//constexpr invoke_result_t<F, Args...>invoke(F&& f, Args&&... args) noexcept {
+//
+//}
 
 MY_STD_END
 #endif//_MY_TYPE_TRAITS_

@@ -14,12 +14,13 @@ struct TestClass
 	void f(int, int) {
 		cout << 1;
 	}
+	int i;
 };
 
 class Base {};
-class Derived : public Base {};
+class Derived final: public Base  {};
 
-enum class TestEnum{};
+enum class TestEnum :char {};
 
 int main() {
 	//²âÊÔÊı¾İ
@@ -157,7 +158,7 @@ int main() {
 	test(is_pointer_v<int*>);
 	test(is_pointer_v<int[]>);
 	test(is_pointer_v<int(*)(void)>);
-	test(is_pointer_v<int*const volatile>);
+	test(is_pointer_v<int* const volatile>);
 	cout << "\n";
 	//²âÊÔis_null_pointer
 	test(is_null_pointer_v<const volatile std::nullptr_t>);
@@ -171,7 +172,7 @@ int main() {
 	test(is_fundamental_v<TestClass>);
 	cout << "\n";
 	//²âÊÔis_convertible
-	test(is_convertible_v<int,double>);
+	test(is_convertible_v<int, double>);
 	test(is_convertible_v<Derived*, Base*>);
 	test(is_convertible_v<const Derived*, Derived*>);
 	test(is_convertible_v<Base, Derived>);
@@ -211,6 +212,117 @@ int main() {
 	test(is_volatile_v<volatile int>);
 	test(is_volatile_v<const volatile int>);
 	cout << "\n";
+	//²âÊÔis_function
+	test(is_function_v<int>);
+	test(is_function_v<int(void)>);
+	test(is_function_v<decltype(&TestClass::f)>);
+	cout << "\n";
+	//²âÊÔis_object
+	test(is_object_v<int>);
+	test(is_object_v<int&>);
+	test(is_object_v<int(void)>);
+	test(is_object_v<decltype(&TestClass::f)>);
+	cout << "\n";
+	//²âÊÔis_member_object_pointer
+	test(is_member_object_pointer_v<int>);
+	test(is_member_object_pointer_v<decltype(&TestClass::i)>);
+	test(is_member_object_pointer_v<decltype(&TestClass::f)>);
+	test(is_member_object_pointer_v<int*>);
+	cout << "\n";
+	//²âÊÔis_member_pointer
+	test(is_member_pointer_v<int>);
+	test(is_member_pointer_v<decltype(&TestClass::i)>);
+	test(is_member_pointer_v<decltype(&TestClass::f)>);
+	test(is_member_pointer_v<int*>);
+	cout << "\n";
+	//²âÊÔis_scalar
+	test(is_scalar_v<int>);
+	test(is_scalar_v<decltype(&TestClass::i)>);
+	test(is_scalar_v<decltype(&TestClass::f)>);
+	test(is_scalar_v<int*>);
+	test(is_scalar_v<std::nullptr_t>);
+	test(is_scalar_v<TestEnum>);
+	test(is_scalar_v<TestClass>);
+	test(is_scalar_v<void>);
+	cout << "\n";
+	//²âÊÔis_empty
+	test(is_empty_v<int>);
+	test(is_empty_v<TestClass>);
+	test(is_empty_v<Base>);
+	//test(is_empty_v<Derived>);
+	cout << "\n";
+	//²âÊÔis_signed
+	test(is_signed_v<int>);
+	test(is_signed_v<const double>);
+	test(is_signed_v<bool>);
+	test(is_signed_v<unsigned int>);
+	test(is_signed_v<TestClass>);
+	cout << "\n";
+	//²âÊÔis_unsigned
+	test(is_unsigned_v<int>);
+	test(is_unsigned_v<const double>);
+	test(is_unsigned_v<bool>);
+	test(is_unsigned_v<unsigned int>);
+	test(is_unsigned_v<TestClass>);
+	cout << "\n";
+	//²âÊÔalignment_of
+	test(alignment_of_v<int>);
+	test(alignment_of_v<double&>);
+	test(alignment_of_v<char[3][3]>);
+	test(alignment_of_v<TestClass>);
+	test(alignment_of_v<Base>);
+	test(alignment_of_v<TestEnum>);
+	cout << "\n";
+	//²âÊÔrank
+	test(rank_v<int>);
+	test(rank_v<int[1]>);
+	test(rank_v<int[1][1]>);
+	test(rank_v<int[1][1][1]>);
+	cout << "\n";
+	//²âÊÔextent
+	test(extent_v<int>);
+	test(extent_v<int[3]>);
+	test(extent_v<int[3][4], 0>);
+	test(extent_v<int[3][4], 1>);
+	test(extent_v<int[3][4], 2>);
+	test(extent_v<int[][4]>);
+	test(extent_v<int[][4], 1>);
+	cout << "\n";
+	//²âÊÔdecay
+	test(is_same_v<decay_t<int>,int>);
+	test(is_same_v<decay_t<int&>, int>);
+	test(is_same_v<decay_t<int&&>, int>);
+	test(is_same_v<decay_t<const volatile int&>, int>);
+	test(is_same_v<decay_t<int[3]>, int*>);
+	test(is_same_v<decay_t<int[3][4]>, int**>);
+	test(is_same_v<decay_t<int[3][4]>, int(*)[4]>);
+	test(is_same_v<decay_t<int(void)>, int(*)(void)>);
+	cout << "\n";
+	//²âÊÔcommon_type
+	test(is_same_v<common_type_t<int>, int>);
+	test(is_same_v<common_type_t<int,char>, int>);
+	test(is_same_v<common_type_t<int, double>, double>);
+	test(is_same_v<common_type_t<Base, Derived>, Base>);
+	test(is_same_v<common_type_t<Base, Derived>, Derived>);
+	//test(is_same_v<common_type_t<TestClass, double>, double>);±àÒëÊ§°Ü,ÒòÎªÃ»ÓĞ¹²Í¬³ÉÔ±
+	cout << "\n";
+	//²âÊÔforward
+	test(is_same_v<decltype(forward<int>(1)), int&&>);
+	//test(is_same_v<decltype(forward<int&>(1)), int>);·Ç·¨
+	test(is_same_v<decltype(forward<int&&>(1)), int&&>);
+	test(is_same_v<decltype(forward<const int&>(1)), const int&>);
+	cout << "\n";
+	//²âÊÔmove
+	test(is_same_v<decltype(move(1)), int&&>);
+	test(is_same_v<decltype(move(ci)),const int&&>);
+	cout << "\n";
+	//²âÊÔremove_cvref
+	test(is_same_v<remove_cvref_t<const volatile int& const volatile>, int>);
+	cout << "\n";
+
+
+
+
 
 
 	//²âÊÔ
