@@ -18,7 +18,7 @@ struct TestClass
 };
 
 class Base {};
-class Derived final: public Base  {};
+class Derived final : public Base {};
 
 enum class TestEnum :char {};
 
@@ -36,7 +36,7 @@ int main() {
 	int* const cpi = &i;
 	const char* pstr = "hello";
 	char arrstr[] = "hello";
-
+	TestClass o{ 42 };
 	//²âÊÔ²¿·Ö
 	cout << std::boolalpha;
 	cout << "¿ªÊ¼²âÊÔ\n";
@@ -289,7 +289,7 @@ int main() {
 	test(extent_v<int[][4], 1>);
 	cout << "\n";
 	//²âÊÔdecay
-	test(is_same_v<decay_t<int>,int>);
+	test(is_same_v<decay_t<int>, int>);
 	test(is_same_v<decay_t<int&>, int>);
 	test(is_same_v<decay_t<int&&>, int>);
 	test(is_same_v<decay_t<const volatile int&>, int>);
@@ -300,7 +300,7 @@ int main() {
 	cout << "\n";
 	//²âÊÔcommon_type
 	test(is_same_v<common_type_t<int>, int>);
-	test(is_same_v<common_type_t<int,char>, int>);
+	test(is_same_v<common_type_t<int, char>, int>);
 	test(is_same_v<common_type_t<int, double>, double>);
 	test(is_same_v<common_type_t<Base, Derived>, Base>);
 	test(is_same_v<common_type_t<Base, Derived>, Derived>);
@@ -314,14 +314,19 @@ int main() {
 	cout << "\n";
 	//²âÊÔmove
 	test(is_same_v<decltype(move(1)), int&&>);
-	test(is_same_v<decltype(move(ci)),const int&&>);
+	test(is_same_v<decltype(move(ci)), const int&&>);
 	cout << "\n";
 	//²âÊÔremove_cvref
 	test(is_same_v<remove_cvref_t<const volatile int& const volatile>, int>);
 	cout << "\n";
-
-
-
+	//²âÊÔinvoke
+	invoke(&TestClass::f, o, 1, 2);
+	cout << '\n';
+	invoke(&TestClass::f, &o, 1, 2);
+	cout << '\n';
+	test(invoke(&TestClass::i, &o));
+	invoke(test<int, int>, 3, 4);
+	cout << "\n";
 
 
 

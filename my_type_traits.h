@@ -824,11 +824,11 @@ struct common_type<SingleTy> {
 };
 
 IMPL_BEGIN
-template<typename Ty1, typename Ty2,typename=void>
+template<typename Ty1, typename Ty2, typename = void>
 struct common_type_2_impl {};
 
 template<typename Ty1, typename Ty2>
-struct common_type_2_impl<Ty1,Ty2, void_t<decay_t<decltype(false ? declval<Ty1>() : declval<Ty2>())>>> {
+struct common_type_2_impl<Ty1, Ty2, void_t<decay_t<decltype(false ? declval<Ty1>() : declval<Ty2>())>>> {
 	using type = decay_t<decltype(false ? declval<Ty1>() : declval<Ty2>())>;
 	//原来三目运算符的返回类型是俩表达式的公共类型
 };
@@ -840,7 +840,7 @@ template<typename Ty1, typename Ty2>
 struct common_type<Ty1, Ty2> : IMPL common_type_2_impl<decay_t<Ty1>, decay_t<Ty2>, void> {};
 
 IMPL_BEGIN
-template<typename,typename Ty1, typename Ty2, typename... Rest>
+template<typename, typename Ty1, typename Ty2, typename... Rest>
 struct common_type_3_impl {};
 
 template<typename Ty1, typename Ty2, typename... Rest>
@@ -851,7 +851,7 @@ IMPL_END
 //◦若 sizeof...(T) 大于二（即 T... 由类型 T1, T2, R... 组成），则若 std::common_type<T1, T2>::type 存在，
 //则成员 type 指代 std::common_type<std::common_type<T1, T2>::type, R...>::type ，若存在这种类型。
 //其他所有情况下，无成员 type 。
-template<typename Ty1, typename Ty2,typename... Rest>
+template<typename Ty1, typename Ty2, typename... Rest>
 struct common_type<Ty1, Ty2, Rest...> :IMPL common_type_3_impl<void, Ty1, Ty2, Rest...> {};
 
 template <typename... Tys>
@@ -885,12 +885,59 @@ struct remove_cvref
 template<typename Ty>
 using remove_cvref_t = typename remove_cvref<Ty>::type;
 
+
 //invoke
-//template< typename F, class... Args >
-//
-//constexpr invoke_result_t<F, Args...>invoke(F&& f, Args&&... args) noexcept {
-//
-//}
+//标准实现用到了许多未实现的组件,这里只是一个简化版
+IMPL_BEGIN
+//f是函数对象
+template<typename F, class... Args >
+constexpr auto invoke_impl_fo(F&& f, Args&&... args) noexcept(noexcept(f(forward<Args>(args)...))) {
+	return f(forward<Args>(args)...);
+}
+
+//f是成员函数指针
+//错误的noexcept
+template<typename F, typename This, class... Args >
+constexpr auto invoke_impl_mfp(F&& f, This target, Args&&... args) noexcept{
+	if constexpr (is_pointer_v<This>) {
+		return ((*target).*f)(forward<Args>(args)...);
+	}
+	else {
+		return (target.*f)(forward<Args>(args)...);
+	}
+}
+
+////f是成员对象指针
+//错误的noexcept
+template<typename F, typename This>
+constexpr auto invoke_impl_mop(F&& f, This target) noexcept{
+	if constexpr (is_pointer_v<This>) {
+		return (*target).*f;
+	}
+	else {
+		return target.*f;
+	}
+}
+
+//这里的noexcept是不对的,但是怎么简洁地正确实现呢?暂时表示我不知道如何处理异常
+template< typename F, class... Args >
+constexpr auto invoke_impl(F&& f, Args&&... args) noexcept {
+	if constexpr (is_member_function_pointer_v<F>) {
+		return invoke_impl_mfp(move(f), forward<Args>(args)...);
+	}
+	else if constexpr (is_member_object_pointer_v<F>) {
+		return invoke_impl_mop(move(f), forward<Args>(args)...);
+	}
+	else {
+		return invoke_impl_fo(move(f), forward<Args>(args)...);
+	}
+}
+IMPL_END
+
+template< typename F, class... Args >
+constexpr auto invoke(F&& f, Args&&... args) noexcept(noexcept(IMPL invoke_impl(move(f), forward<Args>(args)...))) {
+	return IMPL invoke_impl(move(f), forward<Args>(args)...);
+}
 
 MY_STD_END
 #endif//_MY_TYPE_TRAITS_
